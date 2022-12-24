@@ -1,0 +1,235 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "serverFarmsName": {
+            "type": "String"
+        },
+        "appServiceName": {
+            "type": "String"
+        },
+        "vaultUri": {
+            "type": "string"
+        },
+        "azureWebJobsDashboard": {
+            "type": "string"
+        },
+        "storageAccountName": {
+            "type": "String"
+        },
+        "containerName": {
+            "type": "string"
+        },
+        "queueName": {
+            "type": "string"
+        },
+        "sqlSarverName": {
+            "type": "string"
+        },
+        "sqlDBName": {
+            "type": "string"
+        },
+        "sqlAdminUserName": {
+            "type": "string"
+        },
+        "sqlAdminPassword": {
+            "type": "string"
+        }
+    },
+    "functions": [],
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2021-03-01",
+            "name": "[parameters('serverFarmsName')]",
+            "location": "East US",
+            "sku": {
+                "name": "F1"
+            },
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2021-03-01",
+            "name": "[parameters('appServiceName')]",
+            "location": "East US",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('serverFarmsName'))]"
+            ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "siteConfig": {
+                    "numberOfWorkers": 1,
+                    "acrUseManagedIdentityCreds": false,
+                    "alwaysOn": false,
+                    "http20Enabled": false,
+                    "functionAppScaleLimit": 0,
+                    "minimumElasticInstanceCount": 0
+                },
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('serverFarmsName'))]"
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Web/sites/config",
+                    "apiVersion": "2021-03-01",
+                    //"name": "appsettings",
+                    "name": "[concat(parameters('appServiceName'), '/appsettings')]",
+                    "kind": "string",
+                    "properties": {
+                        "VaultUri": "[parameters('vaultUri')]",
+                        "AzureWebJobsDashboard": "[parameters('azureWebJobsDashboard')]"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2021-09-01",
+            "name": "[parameters('storageAccountName')]",
+            "location": "East US",
+            "sku":{
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2",
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices",
+            "apiVersion": "2021-09-01",
+            "name": "[concat(parameters('storageAccountName'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+            ],
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/queueServices",
+            "apiVersion": "2021-09-01",
+            "name": "[concat(parameters('storageAccountName'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+            ],
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2021-09-01",
+            // "name": "[concat(parameters('storageAccountName'), '/default/log')]",
+            "name": "[concat(parameters('storageAccountName'), '/default/', parameters('containerName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccountName'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+            ],
+            "properties": {
+                "immutableStorageWithVersioning": {
+                    "enabled": false
+                },
+                "defaultEncryptionScope": "$account-encryption-key",
+                "denyEncryptionScopeOverride": false,
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/queueServices/queues",
+            "apiVersion": "2021-09-01",
+            // "name": "[concat(parameters('storageAccountName'), '/default/testmessagequeue')]",
+            "name": "[concat(parameters('storageAccountName'), '/default/', parameters('queueName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/queueServices', parameters('storageAccountName'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+            ],
+            "properties": {
+                "metadata": {}
+            }
+        },
+        {
+            "type": "Microsoft.Sql/servers",
+            "apiVersion": "2021-11-01-preview",
+            "name":"[parameters('sqlSarverName')]",
+            "location": "East US",
+            "properties": {
+                "administratorLogin": "[parameters('sqlAdminUserName')]",
+                "administratorLoginPassword": "[parameters('sqlAdminPassword')]"
+            }
+        },
+        {
+            "type": "Microsoft.Sql/servers/firewallRules",
+            "apiVersion": "2021-11-01-preview",
+            "name": "[concat(parameters('sqlSarverName'), '/AllowAllWindowsAzureIps')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', parameters('sqlSarverName'))]"
+            ],
+            "properties": {
+                "startIpAddress": "0.0.0.0",
+                "endIpAddress": "0.0.0.0"
+            }
+        },
+        {
+            "type": "Microsoft.Sql/servers/databases",
+            "apiVersion": "2021-11-01-preview",
+            "name": "[concat(parameters('sqlSarverName'), '/', parameters('sqlDBName'))]",
+            "location": "East US",
+            "sku": {
+                "name": "Basic",
+                "tier":"Basic"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers',parameters('sqlSarverName'))]"
+            ],
+            "properties":{}
+        }
+    ],
+    "outputs": {
+        "serverFarmsName": {
+        "type": "string",
+        "value": "[parameters('serverFarmsName')]"
+        },
+        "serverFarmsId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Web/serverfarms', parameters('serverFarmsName'))]"
+        },
+        "appServiceName": {
+            "type": "string",
+            "value": "[parameters('appServiceName')]"
+        },
+        "appServiceId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
+        },
+        "storageAccountName": {
+            "type": "string",
+            "value": "[parameters('storageAccountName')]"
+        },
+        "storageAccountId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+        },
+        "sqlServerName": {
+            "type": "string",
+            "value": "[parameters('sqlSarverName')]"
+        },
+        "sqlServerId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Sql/servers', parameters('sqlSarverName'))]"
+        },
+        "sqlDBName": {
+            "type": "string",
+            "value": "[parameters('sqlDBName')]"
+        },
+        "sqlDBId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Sql/servers/databases', parameters('sqlSarverName'),parameters('sqlDBName'))]"
+        }
+    }
+}

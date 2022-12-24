@@ -1,0 +1,30 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "keyVaultName": {
+            "value": "SecurityTestAutomationKV"
+        },
+        "userObjectId" : {
+            "value": "2cf478b8-7867-4e78-9ce1-808d3f9a84a9"
+        },
+        "applicationObjectId" :{
+            "value": "f03ee6fb-cfec-4c04-a5e0-f635c0b26b8d"
+        },
+        "sql-cs-key": {
+            "value": "ConnectionStrings--TestDB"
+        },
+        "storageAccount-cs-key":{
+            "value": "AzureWebJobsStorage"
+        },
+        "emailSender-key": {
+            "value": "SenderEmail"
+        },
+         "emailSender-value": {
+            "value": "dinsap5674@outlook.com"
+        },
+        "sendGridApi-key": {
+            "value": "SendGridApiKey"
+        }
+    }
+}

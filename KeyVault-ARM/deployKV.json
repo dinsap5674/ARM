@@ -1,0 +1,162 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "keyVaultName": {
+            // "defaultValue": "SecurityAutomationKV",
+            "type": "string"
+        },
+        "userObjectId":{
+            "type": "string"
+        },
+        "applicationObjectId": {
+            "type": "string"
+        },
+        "sql-cs-key": {
+            "type": "string"
+        },
+        "sql-cs-value": {
+            "type": "string"
+        },
+        "storageAccount-cs-key":{
+            "type": "string"
+        },
+        "storageAccount-cs-value":{
+            "type": "string"
+        },
+        "emailSender-key": {
+            "type": "string"
+        },
+         "emailSender-value": {
+            "type": "string"
+        },
+        "sendGridApi-key": {
+            "type": "string"
+        },
+         "sendGridApi-value": {
+            "type": "string"
+        }
+    },
+    "functions": [],
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2021-11-01-preview",
+            "name": "[parameters('keyVaultName')]",
+            "location": "East US",
+            "properties":{
+                "enabledForDeployment": false,
+                "enabledForDiskEncryption": false,
+                "enabledForTemplateDeployment": true,
+                "tenantId":"[subscription().tenantId]",
+                "sku": {
+                    "family": "A",
+                    "name": "standard"
+                },
+                "accessPolicies": [
+                    {
+                        "tenantId": "[subscription().tenantId]",
+                        "objectId": "[parameters('applicationObjectId')]",
+                        "permissions": {
+                            "keys": [
+                                "Get",
+                                "List"
+                            ],
+                            "secrets": [
+                                "Get",
+                                "List"
+                            ],
+                            "certificates": [
+                                "Get",
+                                "List"
+                            ]
+                        }
+                    },
+                    {
+                        "tenantId": "[subscription().tenantId]",
+                        "objectId": "[parameters('userObjectId')]",
+                        "permissions": {
+                            "keys": [],
+                            "secrets": [
+                                "Get",
+                                "List",
+                                "Set",
+                                "Delete",
+                                "Recover",
+                                "Backup",
+                                "Restore"
+                            ],
+                            "certificates": []
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2021-11-01-preview",
+            // "name": "[concat(parameters('keyVaultName'), '/AzureWebJobsStorage')]",
+            "name": "[concat(parameters('keyVaultName'), '/',parameters('storageAccount-cs-key'))]",
+            "location": "East US",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+            ],
+            "properties": {
+                "value": "[parameters('storageAccount-cs-value')]"
+                // "attributes": {
+                //     "enabled": true
+                // }
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2021-11-01-preview",
+            // "name": "[concat(parameters('keyVaultName'), '/ConnectionStrings--TestDB')]",
+            "name": "[concat(parameters('keyVaultName'), '/',parameters('sql-cs-key'))]",
+            "location": "East US",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+            ],
+            "properties": {
+                "value":"[parameters('sql-cs-value')]"
+                // "attributes": {
+                //     "enabled": true
+                // }
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2021-11-01-preview",
+            // "name": "[concat(parameters('keyVaultName'), '/SenderEmail')]",
+            "name": "[concat(parameters('keyVaultName'), '/',parameters('emailSender-key'))]",
+            "location": "East US",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+            ],
+            "properties": {
+                "value": "[parameters('emailSender-value')]"
+                // "attributes": {
+                //     "enabled": true
+                // }
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2021-11-01-preview",
+            // "name": "[concat(parameters('keyVaultName'), '/SendGridApiKey')]",
+            "name": "[concat(parameters('keyVaultName'), '/',parameters('sendGridApi-key'))]",
+            "location": "East US",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+            ],
+            "properties": {
+                "value": "[parameters('sendGridApi-value')]"
+                // "attributes": {
+                //     "enabled": true
+                // }
+            }
+        }
+    ],
+    "outputs": {}
+}

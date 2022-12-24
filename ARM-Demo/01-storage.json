@@ -1,0 +1,58 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageName": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 24
+        },
+        "storageSKU":{
+            "type": "string",
+            "allowedValues": [
+                "Standard_LRS",
+                "Standard_GRS",
+                "Standard_RAGRS",
+                "Standard_ZRS",
+                "Premium_LRS",
+                "Premium_zRS",
+                "Standard_GZRS",
+                "Standard_RAGZRS"
+
+            ]
+        }
+    },
+    "functions": [],
+    "variables": {},
+    "resources": [
+        // {
+        //     "name": "amdemosa",
+        //     "type": "Microsoft.Storage/storageAccounts",
+        //     "apiVersion": "2021-04-01",
+        //     "location": "[resourceGroup().location]",
+        //     "kind": "StorageV2",
+        //     "sku": {
+        //         "name": "Standard_GRS",
+        //         "tier": "Standard"
+        //     }
+        // },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion" : "2021-09-01",
+            // "name": "amdemosa",
+            //Using parameter for name 
+            "name": "[parameters('storageName')]",
+            //To get the same location of the resource group
+            //"location": "North Europe"
+            "location": "[resourceGroup().location]",
+            "sku": {
+                // "name": "Standard_LRS",
+                //Using parameter
+                "name": "[parameters('storageSKU')]",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2"
+        }
+    ],
+    "outputs": {}
+}

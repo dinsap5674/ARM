@@ -1,0 +1,11 @@
+//To connect to Azure Account 
+Connect-AzAccount
+
+//To Run the power shell script 
+.\01-storage.ps1 
+
+//To do the IaC security scanning by snyk in cmd
+snyk iac test deploy.json
+
+//To get the test result in json format
+snyk iac test deploy.json --json
